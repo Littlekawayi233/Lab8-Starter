@@ -42,6 +42,18 @@ function initializeServiceWorker() {
   // websites to have some (if not all) functionality offline! I highly
   // recommend reading up on ServiceWorkers on MDN before continuing.
   /*******************/
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then((success) => {
+          console.log('successful', success.scope);
+        })
+        .catch((error) => {
+          console.error('registration failed: ', error);
+        });
+    });
+  }
+  
   // We first must register our ServiceWorker here before any of the code in
   // sw.js is executed.
   // B1. TODO - Check if 'serviceWorker' is supported in the current browser
@@ -53,7 +65,7 @@ function initializeServiceWorker() {
   //            log that it was successful.
   // B5. TODO - In the event that the service worker registration fails, console
   //            log that it has failed.
-  // STEPS B6 ONWARDS WILL BE IN /sw.js
+  //  B6 ONWARDS WILL BE IN /sw.js
 }
 
 /**
@@ -68,10 +80,29 @@ async function getRecipes() {
   // EXPOSE - START (All expose numbers start with A)
   // A1. TODO - Check local storage to see if there are any recipes.
   //            If there are recipes, return them.
+    let local_recipes = localStorage.getItem('recipes')
+    if(local_recipes){return JSON.parse(local_recipes)}
   /**************************/
   // The rest of this method will be concerned with requesting the recipes
   // from the network
   // A2. TODO - Create an empty array to hold the recipes that you will fetch
+    let recipes = []
+   return new Promise(async(resolve,reject)=>{
+    try{
+      for(const item of RECIPE_URLS ){
+        let fetched = await fetch(item)
+        let recipe = await fetched.json();
+        recipes.push(recipe)
+        if (recipes.length === RECIPE_URLS.length) {
+          saveRecipesToStorage(recipes);
+          resolve(recipes);
+        }
+      }
+    }catch(error){
+      console.error('Rejected', error);
+      reject(error);
+    }
+   });
   // A3. TODO - Return a new Promise. If you are unfamiliar with promises, MDN
   //            has a great article on them. A promise takes one parameter - A
   //            function (we call these callback functions). That function will
